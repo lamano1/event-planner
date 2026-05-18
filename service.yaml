@@ -1,0 +1,41 @@
+apiVersion: serve.knative.dev/v1
+kind: Service
+metadata:
+  name: event-planner
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - image: gcr.io/PROJECT_ID/event-planner:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: APP_ENV
+          value: "production"
+        - name: APP_DEBUG
+          value: "false"
+        - name: DB_CONNECTION
+          value: "mysql"
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: db-host
+        - name: DB_PORT
+          value: "3306"
+        - name: DB_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: db-name
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: db-user
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: db-password

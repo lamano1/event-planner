@@ -1,0 +1,31 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/event-planner:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/event-planner:latest'
+      - '.'
+
+  # Push the image to Google Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/event-planner:$SHORT_SHA'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    args:
+      - run
+      - '--filename=.'
+      - '--image=gcr.io/$PROJECT_ID/event-planner:$SHORT_SHA'
+      - '--location=us-central1'
+
+images:
+  - 'gcr.io/$PROJECT_ID/event-planner:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/event-planner:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
