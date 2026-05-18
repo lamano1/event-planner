@@ -1,9 +1,11 @@
 FROM php:8.2-fpm
 
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     git \
     curl \
+    wget \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
@@ -12,15 +14,17 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     nginx \
-    && docker-php-ext-install -j$(nproc) \
+    supervisor \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install -j$(nproc) \
     gd \
     pdo \
     pdo_mysql \
     mbstring \
     xml \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    curl
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
@@ -32,13 +36,14 @@ WORKDIR /var/www/html
 COPY . .
 
 # Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev
+RUN composer install --optimize-autoloader --no-dev 2>&1
 
 # Install Node dependencies and build assets
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
+    && apt-get install -y --no-install-recommends nodejs \
     && npm install \
-    && npm run build
+    && npm run build \
+    && rm -rf /var/lib/apt/lists/*
 
 # Generate application key
 RUN php artisan key:generate
@@ -46,28 +51,22 @@ RUN php artisan key:generate
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Configure PHP-FPM
-RUN mkdir -p /run/php && \
-    chown -R www-data:www-data /run/php
-
 # Configure Nginx
 COPY .render/nginx.conf /etc/nginx/sites-available/default
-RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && \
-    rm -f /etc/nginx/sites-enabled/default.conf
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# Create startup script for Cloud Run
-RUN echo '#!/bin/bash\n\
-php-fpm -D\n\
-nginx -g "daemon off;"\n\
-' > /start.sh && chmod +x /start.sh
+# Configure supervisor for PHP-FPM and Nginx
+RUN mkdir -p /var/log/supervisor
+COPY .render/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Cache busting and optimizations
 RUN php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache
 
-# Expose port 8080 (Cloud Run requirement)
+# Expose port 8080
 EXPOSE 8080
 
-# Start services
-CMD ["/start.sh"]
+# Start supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
