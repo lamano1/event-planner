@@ -1,72 +1,72 @@
-FROM php:8.2-fpm
+FROM php:8.2-apache
 
-# Install system dependencies
+# Install required system packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     git \
     curl \
-    wget \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
     zip \
     unzip \
-    nginx \
-    supervisor \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
-RUN docker-php-ext-install -j$(nproc) \
-    gd \
-    pdo \
+# Install PHP extensions using docker-php-ext-install
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
     pdo_mysql \
     mbstring \
-    xml \
-    curl
+    exif \
+    pcntl \
+    bcmath \
+    gd
+
+# Enable Apache modules
+RUN a2enmod rewrite headers
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
+# Copy application files
 COPY . .
 
 # Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev 2>&1
+RUN composer install --no-dev --no-interaction --optimize-autoloader
 
-# Install Node dependencies and build assets
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y --no-install-recommends nodejs \
-    && npm install \
-    && npm run build \
-    && rm -rf /var/lib/apt/lists/*
+# Install NPM dependencies and build assets
+RUN npm ci && npm run build
 
-# Generate application key
+# Generate app key
 RUN php artisan key:generate
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Configure Nginx
-COPY .render/nginx.conf /etc/nginx/sites-available/default
-RUN rm -f /etc/nginx/sites-enabled/default && \
-    ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
+# Configure Apache
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
-# Configure supervisor for PHP-FPM and Nginx
-RUN mkdir -p /var/log/supervisor
-COPY .render/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN echo '<Directory /var/www/html/public>' >> /etc/apache2/apache2.conf \
+    && echo '  Options Indexes FollowSymLinks' >> /etc/apache2/apache2.conf \
+    && echo '  AllowOverride All' >> /etc/apache2/apache2.conf \
+    && echo '  Require all granted' >> /etc/apache2/apache2.conf \
+    && echo '</Directory>' >> /etc/apache2/apache2.conf
 
-# Cache busting and optimizations
+# Cache optimization
 RUN php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache
 
-# Expose port 8080
+# Configure port for Cloud Run
+ENV PORT=8080
+RUN sed -i 's/Listen 80/Listen 8080/g' /etc/apache2/ports.conf
+
 EXPOSE 8080
 
-# Start supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["apache2-foreground"]
