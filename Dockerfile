@@ -1,10 +1,6 @@
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
-# Enable necessary Apache modules
-RUN a2enmod rewrite
-RUN a2enmod headers
-
-# Install required PHP extensions
+# Install necessary packages
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -15,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
+    nginx \
     && docker-php-ext-install -j$(nproc) \
     gd \
     pdo \
@@ -49,15 +46,20 @@ RUN php artisan key:generate
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Configure Apache to serve from public directory
-RUN echo '<Directory /var/www/html/public>' >> /etc/apache2/apache2.conf && \
-    echo '  Options Indexes FollowSymLinks' >> /etc/apache2/apache2.conf && \
-    echo '  AllowOverride All' >> /etc/apache2/apache2.conf && \
-    echo '  Require all granted' >> /etc/apache2/apache2.conf && \
-    echo '</Directory>' >> /etc/apache2/apache2.conf
+# Configure PHP-FPM
+RUN mkdir -p /run/php && \
+    chown -R www-data:www-data /run/php
 
-# Set DocumentRoot to public
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Configure Nginx
+COPY .render/nginx.conf /etc/nginx/sites-available/default
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default && \
+    rm -f /etc/nginx/sites-enabled/default.conf
+
+# Create startup script for Cloud Run
+RUN echo '#!/bin/bash\n\
+php-fpm -D\n\
+nginx -g "daemon off;"\n\
+' > /start.sh && chmod +x /start.sh
 
 # Cache busting and optimizations
 RUN php artisan config:cache && \
@@ -67,47 +69,5 @@ RUN php artisan config:cache && \
 # Expose port 8080 (Cloud Run requirement)
 EXPOSE 8080
 
-# Modify Apache to listen on 8080
-RUN sed -i 's/Listen 80/Listen 8080/g' /etc/apache2/ports.conf
-
-# Start Apache
-CMD ["apache2-foreground"]
-
-
-FROM php:8.2-fpm-alpine
-
-# Installation des dépendances système nécessaires
-RUN apk add --no-cache \
-    nginx \
-    curl \
-    libpng-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    git \
-    oniguruma-dev
-
-# Installation des extensions PHP requises par Laravel
-RUN docker-php-ext-install pdo_mysql mbstring bcmath exif pcntl gd
-
-# Installation de Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-WORKDIR /var/www
-
-# Copie du projet
-COPY . .
-
-# Installation des dépendances PHP
-RUN composer install --no-dev --optimize-autoloader
-
-# Configuration des permissions pour Laravel
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-
-# Configuration minimale de Nginx pour Render
-RUN mkdir -p /run/nginx
-COPY .render/nginx.conf /etc/nginx/nginx.conf
-
-EXPOSE 80
-
-CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
+# Start services
+CMD ["/start.sh"]
