@@ -1,53 +1,76 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Mes Événements') }}
-            </h2>
-            <a href="{{ route('events.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                + Nouvel Événement
-            </a>
+            <h2 class="title-futuristic">⭐ MES ÉVÉNEMENTS</h2>
+            <a href="{{ route('events.create') }}" class="btn-cyan">+ CRÉER</a>
         </div>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                @if(session('success'))
-                    <div class="mb-4 p-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>
-                @endif
-                @if($events->isEmpty())
-                    <p class="text-center text-gray-500">Vous n'avez pas encore d'événements. Commencez par en créer un !</p>
-                @else
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titre</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach($events as $event)
-                                <tr class="group hover:bg-gray-50">
-                                    <td class="px-6 py-4">{{ $event->title }} @if($event->managed_at) <span class="ml-2 inline-block text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Géré</span> @endif</td>
-                                    <td class="px-6 py-4">{{ $event->type }}</td>
-                                    <td class="px-6 py-4">{{ \Carbon\Carbon::parse($event->date)->format('d/m/Y') }}</td>
-                                    <td class="px-6 py-4 text-right">
-                                        <a href="{{ route('events.show', $event) }}" class="text-blue-600 hover:text-blue-900 mr-3">Gérer</a>
-                                        <a href="{{ route('events.edit', $event) }}" class="text-gray-500 mr-3 opacity-0 group-hover:opacity-100">Modifier</a>
-                                        <form action="{{ route('events.destroy', $event) }}" method="POST" class="inline">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Supprimer cet événement ?')">Supprimer</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @endif
-            </div>
+            @if(session('success'))
+                <div class="mb-6 p-4 rounded-lg bg-green-500 bg-opacity-10 border border-green-500 border-opacity-50 glow-green">
+                    ✓ {{ session('success') }}
+                </div>
+            @endif
+            
+            @if($events->isEmpty())
+                <div class="text-center py-16">
+                    <div class="text-6xl mb-4">🚀</div>
+                    <p class="text-purple-300 text-lg mb-6">Vous n'avez pas encore d'événements</p>
+                    <a href="{{ route('events.create') }}" class="btn-neon inline-block">CRÉER VOTRE PREMIER ÉVÉNEMENT</a>
+                </div>
+            @else
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach($events as $event)
+                        <div class="event-card group hover:scale-105 hover:shadow-lg">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex-1">
+                                    <h3 class="event-card-title text-lg mb-1">{{ $event->title }}</h3>
+                                    <span class="event-card-badge">
+                                        @switch($event->type)
+                                            @case('Anniversaire') 🎂 @break
+                                            @case('Mariage') 💍 @break
+                                            @case('Professionnel') 💼 @break
+                                            @default ✨
+                                        @endswitch
+                                        {{ $event->type }}
+                                    </span>
+                                </div>
+                                @if($event->managed_at)
+                                    <span class="inline-block text-xs bg-green-500 bg-opacity-20 text-green-400 px-3 py-1 rounded-full border border-green-500 border-opacity-50">✓ Géré</span>
+                                @endif
+                            </div>
+                            
+                            <div class="space-y-2 mb-4">
+                                <p class="text-purple-200 text-sm">
+                                    📅 {{ \Carbon\Carbon::parse($event->date)->format('d/m/Y') }}
+                                </p>
+                                @if($event->location)
+                                    <p class="text-purple-200 text-sm">
+                                        📍 {{ $event->location }}
+                                    </p>
+                                @endif
+                            </div>
+
+                            <div class="flex gap-2 pt-4 border-t border-purple-500 border-opacity-20">
+                                <a href="{{ route('events.show', $event) }}" class="flex-1 btn-cyan text-center text-xs py-2">
+                                    Gérer
+                                </a>
+                                <a href="{{ route('events.edit', $event) }}" class="flex-1 px-3 py-2 rounded-lg text-purple-300 border border-purple-500 border-opacity-50 hover:border-opacity-100 hover:text-purple-200 font-semibold text-xs">
+                                    Modifier
+                                </a>
+                                <form action="{{ route('events.destroy', $event) }}" method="POST" class="flex-1" onsubmit="return confirm('Supprimer cet événement ?')">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="w-full px-3 py-2 rounded-lg text-red-400 border border-red-500 border-opacity-50 hover:border-opacity-100 hover:text-red-300 font-semibold text-xs">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>

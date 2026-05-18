@@ -49,8 +49,8 @@ class EventController extends Controller
         $event->user_id = Auth::id(); // On lie l'événement à l'ID de la personne connectée
         $event->save();
 
-        // 3. Redirection avec un message de succès
-        return redirect()->route('events.index')->with('success', 'Événement créé avec succès !');
+        // 3. Redirection vers la page de détail de l'événement créé
+        return redirect()->route('events.show', $event)->with('success', 'Événement créé avec succès ! Vous pouvez maintenant le gérer.');
     }
 
     /**

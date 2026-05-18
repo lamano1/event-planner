@@ -1,3 +1,188 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Futuristic Cinematique Theme */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --neon-purple: #c400ff;
+  --neon-pink: #ff006e;
+  --neon-cyan: #00f0ff;
+  --neon-green: #00ff88;
+  --dark-bg: #0a0e27;
+  --dark-secondary: #16213e;
+  --dark-card: #1a2947;
+}
+
+* {
+  @apply transition-all duration-300;
+}
+
+body {
+  @apply bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900;
+  background-attachment: fixed;
+}
+
+/* Glow Effects */
+.glow-purple {
+  text-shadow: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
+}
+
+.glow-pink {
+  text-shadow: 0 0 10px var(--neon-pink), 0 0 20px var(--neon-pink);
+}
+
+.glow-cyan {
+  text-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+}
+
+.glow-green {
+  text-shadow: 0 0 10px var(--neon-green), 0 0 20px var(--neon-green);
+}
+
+/* Card Glow */
+.card-glow {
+  @apply relative;
+  border: 1px solid rgba(196, 0, 255, 0.3);
+  box-shadow: 0 0 20px rgba(196, 0, 255, 0.1), inset 0 0 20px rgba(196, 0, 255, 0.05);
+}
+
+.card-glow:hover {
+  border-color: rgba(196, 0, 255, 0.6);
+  box-shadow: 0 0 30px rgba(196, 0, 255, 0.3), inset 0 0 30px rgba(196, 0, 255, 0.1);
+}
+
+/* Button Styles */
+.btn-neon {
+  @apply relative px-6 py-2 font-bold text-sm overflow-hidden rounded-lg;
+  background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
+  border: 1px solid rgba(196, 0, 255, 0.5);
+  color: white;
+  box-shadow: 0 0 10px rgba(196, 0, 255, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.btn-neon:hover {
+  box-shadow: 0 0 20px rgba(196, 0, 255, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-cyan {
+  @apply relative px-6 py-2 font-bold text-sm overflow-hidden rounded-lg;
+  background: linear-gradient(45deg, var(--neon-cyan), #0099ff);
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  color: #000;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+}
+
+.btn-cyan:hover {
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.8);
+  transform: translateY(-2px);
+}
+
+.btn-green {
+  @apply relative px-6 py-2 font-bold text-sm overflow-hidden rounded-lg;
+  background: linear-gradient(45deg, var(--neon-green), #00cc66);
+  border: 1px solid rgba(0, 255, 136, 0.5);
+  color: #000;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+.btn-green:hover {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+  transform: translateY(-2px);
+}
+
+/* Animated Background */
+.animated-bg {
+  @apply relative overflow-hidden;
+}
+
+.animated-bg::before {
+  content: '';
+  @apply absolute inset-0 opacity-10;
+  background: linear-gradient(45deg, transparent 25%, rgba(196, 0, 255, 0.1) 25%, rgba(196, 0, 255, 0.1) 50%, transparent 50%, transparent 75%, rgba(0, 240, 255, 0.1) 75%, rgba(0, 240, 255, 0.1));
+  background-size: 40px 40px;
+  animation: slide 20s linear infinite;
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(40px);
+  }
+}
+
+/* Titles */
+.title-futuristic {
+  @apply font-black text-4xl md:text-5xl;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 2px;
+  background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink), var(--neon-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(196, 0, 255, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(196, 0, 255, 0.8));
+  }
+}
+
+/* Futuristic Input */
+.input-futuristic {
+  @apply w-full bg-slate-900 bg-opacity-50 border border-purple-500 border-opacity-30 rounded-lg px-4 py-3 text-white;
+  font-family: 'Space Mono', monospace;
+}
+
+.input-futuristic:focus {
+  @apply outline-none border-purple-400 border-opacity-100 ring-2;
+  box-shadow: 0 0 15px rgba(196, 0, 255, 0.3);
+}
+
+.input-futuristic::placeholder {
+  @apply text-purple-300 text-opacity-50;
+}
+
+/* Event Card */
+.event-card {
+  @apply bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-6 card-glow;
+}
+
+.event-card-title {
+  @apply font-black text-xl;
+  font-family: 'Orbitron', sans-serif;
+  color: var(--neon-cyan);
+}
+
+.event-card-badge {
+  @apply inline-block px-3 py-1 rounded-full text-xs font-bold;
+  background: linear-gradient(45deg, rgba(196, 0, 255, 0.2), rgba(255, 0, 110, 0.2));
+  border: 1px solid rgba(196, 0, 255, 0.5);
+  color: var(--neon-purple);
+}
+
+/* Section Header */
+.section-header {
+  @apply flex items-center gap-3 mb-4;
+}
+
+.section-header::before {
+  content: '';
+  @apply w-1 h-8 rounded-full;
+  background: linear-gradient(180deg, var(--neon-purple), var(--neon-pink));
+  box-shadow: 0 0 10px currentColor;
+}
+
+.section-title {
+  @apply font-bold text-lg;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1px;
+}
